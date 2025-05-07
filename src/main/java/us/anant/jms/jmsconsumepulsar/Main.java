@@ -9,6 +9,7 @@ import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 
 import com.datastax.oss.pulsar.jms.PulsarConnectionFactory;
+import com.datastax.oss.pulsar.jms.PulsarDestination;
 
 /**
  * Hello world!
@@ -56,11 +57,22 @@ public class Main
     	  
     }
     
-	private static Map<String,Object> createConfiguration() {
+	private static Map<String,Object> createPersistConfiguration() {
 		final Map<String, Object> configuration = new HashMap<>();
 		configuration.put("webServiceUrl", pulsarUrl);
   	  	configuration.put("brokerServiceUrl", brokerUrl);
-  	  
+  	  	//configuration.put("enablePersistentTopics", true);
+  	  	configuration.put("authPlugin","org.apache.pulsar.client.impl.auth.AuthenticationToken");
+  	  	configuration.put("authParams",token);
+  	  	
+  	  	return configuration;
+	}
+	
+	private static Map<String,Object> createNonPersistConfiguration() {
+		final Map<String, Object> configuration = new HashMap<>();
+		configuration.put("webServiceUrl", pulsarUrl);
+  	  	configuration.put("brokerServiceUrl", brokerUrl);
+  	  	//configuration.put("enablePersistentTopics", false);
   	  	configuration.put("authPlugin","org.apache.pulsar.client.impl.auth.AuthenticationToken");
   	  	configuration.put("authParams",token);
   	  	
@@ -69,7 +81,7 @@ public class Main
 	
 	private static void generatePersistentMessage() {
 		
-		final Map<String, Object> configuration = createConfiguration();
+		final Map<String, Object> configuration = createPersistConfiguration();
 		
 		try (final PulsarConnectionFactory factory = new PulsarConnectionFactory(configuration)) {
 			try (final JMSContext context = factory.createContext()) {
@@ -84,8 +96,7 @@ public class Main
 	}
 	
 	private static void generateNonPersistentMessage() {
-		final Map<String, Object> configuration = createConfiguration();
-		
+		final Map<String, Object> configuration = createNonPersistConfiguration();
 		try (final PulsarConnectionFactory factory = new PulsarConnectionFactory(configuration)) {
 			try (final JMSContext context = factory.createContext()) {
 				final Destination destination = context.createQueue("non-persistent://" + nvwTopic);
@@ -100,7 +111,7 @@ public class Main
 	
 	private static void consumePersistentMessage() {
 		
-		 final Map<String, Object> configuration = createConfiguration();
+		 final Map<String, Object> configuration = createPersistConfiguration();
 		
 		  try (PulsarConnectionFactory factory = new PulsarConnectionFactory(configuration)) {
 	    	  try (JMSContext context = factory.createContext()) {
@@ -120,7 +131,7 @@ public class Main
 	}
 	
 	private static void consumeNonPersistentMessage() {
-		final Map<String, Object> configuration = createConfiguration();
+		final Map<String, Object> configuration = createNonPersistConfiguration();
 		
 		  try (PulsarConnectionFactory factory = new PulsarConnectionFactory(configuration)) {
 	    	  try (JMSContext context = factory.createContext()) {
