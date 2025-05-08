@@ -61,7 +61,7 @@ public class Main
 		final Map<String, Object> configuration = new HashMap<>();
 		configuration.put("webServiceUrl", pulsarUrl);
   	  	configuration.put("brokerServiceUrl", brokerUrl);
-  	  	//configuration.put("enablePersistentTopics", true);
+  	  	configuration.put("enablePersistentTopics", true);
   	  	configuration.put("authPlugin","org.apache.pulsar.client.impl.auth.AuthenticationToken");
   	  	configuration.put("authParams",token);
   	  	
@@ -72,7 +72,7 @@ public class Main
 		final Map<String, Object> configuration = new HashMap<>();
 		configuration.put("webServiceUrl", pulsarUrl);
   	  	configuration.put("brokerServiceUrl", brokerUrl);
-  	  	//configuration.put("enablePersistentTopics", false);
+		configuration.put("enablePersistentTopics", true);
   	  	configuration.put("authPlugin","org.apache.pulsar.client.impl.auth.AuthenticationToken");
   	  	configuration.put("authParams",token);
   	  	
