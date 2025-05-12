@@ -4,12 +4,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
+import javax.jms.JMSProducer;
+import javax.jms.Topic;
 
 import com.datastax.oss.pulsar.jms.PulsarConnectionFactory;
 import com.datastax.oss.pulsar.jms.PulsarDestination;
+import com.datastax.oss.pulsar.jms.PulsarTopic;
 
 /**
  * Hello world!
@@ -35,7 +39,8 @@ public class Main
     	}
     	
     	System.out.println(args[0]);
-    	  
+    	
+    	   	  
     	final String argument = args[0];
     	
     	switch(argument) {
@@ -61,7 +66,6 @@ public class Main
 		final Map<String, Object> configuration = new HashMap<>();
 		configuration.put("webServiceUrl", pulsarUrl);
   	  	configuration.put("brokerServiceUrl", brokerUrl);
-  	  	configuration.put("enablePersistentTopics", true);
   	  	configuration.put("authPlugin","org.apache.pulsar.client.impl.auth.AuthenticationToken");
   	  	configuration.put("authParams",token);
   	  	
@@ -72,7 +76,6 @@ public class Main
 		final Map<String, Object> configuration = new HashMap<>();
 		configuration.put("webServiceUrl", pulsarUrl);
   	  	configuration.put("brokerServiceUrl", brokerUrl);
-		configuration.put("enablePersistentTopics", true);
   	  	configuration.put("authPlugin","org.apache.pulsar.client.impl.auth.AuthenticationToken");
   	  	configuration.put("authParams",token);
   	  	
@@ -97,10 +100,13 @@ public class Main
 	
 	private static void generateNonPersistentMessage() {
 		final Map<String, Object> configuration = createNonPersistConfiguration();
+		final Topic pulsarTopic = new PulsarTopic("non-persistent://" + nvwTopic);
 		try (final PulsarConnectionFactory factory = new PulsarConnectionFactory(configuration)) {
 			try (final JMSContext context = factory.createContext()) {
 				final Destination destination = context.createQueue("non-persistent://" + nvwTopic);
-				context.createProducer().send(destination, "NON-PERSIST" + UUID.randomUUID().toString());
+				final JMSProducer jmsProducer = context.createProducer();
+				jmsProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+				jmsProducer.send(destination, "NON-PERSIST" + UUID.randomUUID().toString());
 			} catch(Exception ex) {
 				System.out.println("Generate Produce Error : " + ex.getLocalizedMessage());
 			}
@@ -132,14 +138,14 @@ public class Main
 	
 	private static void consumeNonPersistentMessage() {
 		final Map<String, Object> configuration = createNonPersistConfiguration();
-		
+		final Topic pulsarTopic = new PulsarTopic("non-persistent://" + nvwTopic);
 		  try (PulsarConnectionFactory factory = new PulsarConnectionFactory(configuration)) {
 	    	  try (JMSContext context = factory.createContext()) {
-	    	      Destination destination = context.createQueue("non-persistent://" + nvwTopic);
-	    	      try (JMSConsumer consumer = context.createConsumer(destination)) {
+	    	      try (final JMSConsumer consumer = context.createSharedConsumer(pulsarTopic, "np-jms-queue")) {
 	    	          String message = consumer.receiveBody(String.class);
 	    	          System.out.println(message);
 	    	      } catch (Exception ex) {
+	    	    	  ex.printStackTrace();
 	    	    	  System.out.println("Consumer Error : " + ex.getLocalizedMessage());
 	    	      }
 	    	  } catch (Exception ex) {
